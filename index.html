@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <title>saturns radio thing</title>
+</head>
+<body>
+    <h2>saturns radio thing</h2>
+    <form id="dataForm">
+        <label for="textInput">Enter Text:</label>
+        <input type="text" id="textInput" required><br><br>
+
+        <label for="dropdown">Choose an option:</label>
+        <select id="dropdown">
+            <option value="Option1">Option 1</option>
+            <option value="Option2">Option 2</option>
+            <option value="Option3">Option 3</option>
+        </select><br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <h2>stored data</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>text</th>
+                <th>option</th>
+            </tr>
+        </thead>
+        <tbody id="dataTable"></tbody>
+    </table>
+
+    <script>
+        const githubUsername = "saturnquack";
+        const repoName = "r";
+        const filePath = "data.json";
+        const branch = "main"; 
+        const token = "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"; 
+
+        const apiUrl = `https://api.github.com/repos/${githubUsername}/${repoName}/contents/${filePath}`;
+
+        async function fetchData() {
+            const response = await fetch(apiUrl, {
+                headers: {
+                    "Authorization": `token ${token}`,
+                    "Accept": "application/vnd.github.v3+json"
+                }
+            });
+
+            if (!response.ok) {
+                console.error("Error fetching data:", await response.text());
+                return [];
+            }
+
+            const data = await response.json();
+            return JSON.parse(atob(data.content)); 
+        }
+
+        async function updateData(newData) {
+            const currentData = await fetchData();
+            currentData.push(newData);
+
+            const updatedContent = btoa(JSON.stringify(currentData, null, 2));
+
+            const response = await fetch(apiUrl, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `token ${token}`,
+                    "Accept": "application/vnd.github.v3+json"
+                },
+                body: JSON.stringify({
+                    message: "Update data.json",
+                    content: updatedContent,
+                    sha: await getFileSHA()
+                })
+            });
+
+            if (response.ok) {
+                alert("Data saved successfully!");
+                loadData();
+            } else {
+                console.error("Error updating data:", await response.text());
+            }
+        }
+
+        async function getFileSHA() {
+            const response = await fetch(apiUrl, {
+                headers: { "Authorization": `token ${token}` }
+            });
+
+            if (!response.ok) return null;
+            const data = await response.json();
+            return data.sha; 
+        }
+
+        async function loadData() {
+            const data = await fetchData();
+            let tableBody = document.getElementById("dataTable");
+            tableBody.innerHTML = "";
+
+            data.forEach(row => {
+                let newRow = tableBody.insertRow();
+                newRow.insertCell(0).textContent = row.text;
+                newRow.insertCell(1).textContent = row.option;
+            });
+        }
+
+        document.getElementById("dataForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const newData = {
+                text: document.getElementById("textInput").value,
+                option: document.getElementById("dropdown").value
+            };
+
+            await updateData(newData);
+        });
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
