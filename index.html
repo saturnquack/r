@@ -1,71 +1,162 @@
-<form 
-  method="POST" 
-  action="https://script.google.com/macros/s/AKfycbwhUjCxkogNpUhKW1U_q0d8Z2-WB-WR7BNdsukvRqN25Ueu7qVMo6rcmWduyX4nQB3S8g/exec">
+<!DOCTYPE html>
+<html>
+<head>
+  <!--hello vro-->
+  <!--idk why youre here, most of this code is stolen from stackoverflow-->
+  <!--feetfinder.com-->
+  <title>Saturn's Placeholder Name</title>
+    <style> 
+        th {
+            cursor: pointer;
+            background-color: #f2f2f2;
+            padding: 8px;
+        }
+        th:hover {
+            background-color: #ddd;
+        }
+        .arrow {
+            font-size: 12px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+  <h1>Saturns Placeholder Name</h1>
+  <br></br>
+    <form id="radioForm">
+        Frequency: <input name="Frequency" type="text" required> <br><br>
+        Alpha Tag: <input name="Alpha Tag" type="text" required> <br><br>
+        County: <input name="County" type="text"> <br><br>
+        State: <input name="State" type="text"> <br><br>
+
+        <label for="dropdown">Mode: </label>
+        <select name="Mode" id="dropdown">
+            <option value="FM">FM</option>
+            <option value="AM">AM</option>
+            <option value="P25 I">P25 I</option>
+            <option value="P25 II">P25 II</option>
+            <option value="DMR">DMR</option>
+            <option value="SSB">SSB</option>
+        </select><br><br>
+
+        <button type="submit">Send</button>
+    </form>
+
+    <h2>Database</h2>
+    <table border="1" id="dataTable">
+        <thead>
+            <tr id="tableHeader">
+                <th onclick="sortTable('Frequency')">Frequency <span class="arrow" id="FrequencyArrow"></span></th>
+                <th onclick="sortTable('Alpha Tag')">Alpha Tag <span class="arrow" id="AlphaTagArrow"></span></th>
+                <th onclick="sortTable('County')">County <span class="arrow" id="CountyArrow"></span></th>
+                <th onclick="sortTable('State')">State <span class="arrow" id="StateArrow"></span></th>
+                <th onclick="sortTable('Mode')">Mode <span class="arrow" id="ModeArrow"></span></th>
+                <th onclick="sortTable('Date')">Date <span class="arrow" id="DateArrow"></span></th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
   
-  Frequency: <input name="Frequency" type="text"> <br><br>
-  Alpha Tag: <input name="Alpha Tag" type="text"> <br><br>
-  County: <input name="County" type="text"> <br><br>
-  State: <input name="State" type="text"> <br><br>
+   <footer>
+  <p>@saturn_quack on discord</p>
+     
+  <p><a href="saturnquack.com">saturnquack.com</a></p>
+</footer> 
+  
+  
+    <script>
+        const form = document.getElementById("radioForm");
+        const scriptURL = "https://script.google.com/macros/s/AKfycbwhUjCxkogNpUhKW1U_q0d8Z2-WB-WR7BNdsukvRqN25Ueu7qVMo6rcmWduyX4nQB3S8g/exec";
+        let tableData = [];
+        let sortOrder = {}; 
 
-  <label for="dropdown">Mode: </label>
-  <select name="Mode" id="dropdown">
-      <option value="FM">FM</option>
-      <option value="AM">AM</option>
-      <option value="P25 I">P25 I</option>
-      <option value="P25 II">P25 II</option>
-      <option value="DMR">DMR</option>
-      <option value="SSB">SSB</option>
-  </select><br><br>
+        async function fetchData() {
+            try {
+                const response = await fetch(scriptURL);
+                tableData = await response.json();
+                if (tableData.length === 0) return;
+                renderTable(tableData);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
 
-  <button type="submit">Send</button>
-</form>
+        function renderTable(data) {
+            const tableBody = document.getElementById("tableBody");
+            tableBody.innerHTML = "";
 
-<!-- Table to display sheet data -->
-<h2>Submitted Data</h2>
-<table border="1" id="dataTable">
-  <thead>
-    <tr id="tableHeader"></tr>
-  </thead>
-  <tbody id="tableBody"></tbody>
-</table>
+            data.forEach(row => {
+                const tr = document.createElement("tr");
+                Object.values(row).forEach(value => {
+                    const td = document.createElement("td");
+                    td.textContent = value;
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+        }
 
-<script>
-  async function fetchData() {
-    try {
-      const response = await fetch('https://script.google.com/macros/s/AKfycbwhUjCxkogNpUhKW1U_q0d8Z2-WB-WR7BNdsukvRqN25Ueu7qVMo6rcmWduyX4nQB3S8g/exec');
-      const data = await response.json();
+        function sortTable(column) {
+            const isNumeric = !isNaN(tableData[0][column]);
+            tableData.sort((a, b) => {
+                let valA = a[column], valB = b[column];
 
-      if (data.length === 0) return;
+                if (isNumeric) {
+                    valA = parseFloat(valA) || 0;
+                    valB = parseFloat(valB) || 0;
+                } else {
+                    valA = valA.toString().toLowerCase();
+                    valB = valB.toString().toLowerCase();
+                }
 
-      const tableHeader = document.getElementById("tableHeader");
-      const tableBody = document.getElementById("tableBody");
+                return (sortOrder[column] || 1) * (valA > valB ? 1 : -1);
+            });
 
-      // Clear existing table content
-      tableHeader.innerHTML = "";
-      tableBody.innerHTML = "";
+            sortOrder[column] = (sortOrder[column] || 1) * -1;
 
-      // Create table headers
-      Object.keys(data[0]).forEach(header => {
-        const th = document.createElement("th");
-        th.textContent = header;
-        tableHeader.appendChild(th);
-      });
+            updateSortArrows(column, sortOrder[column]);
 
-      // Populate table rows
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        Object.values(row).forEach(value => {
-          const td = document.createElement("td");
-          td.textContent = value;
-          tr.appendChild(td);
+            renderTable(tableData);
+        }
+
+        function updateSortArrows(activeColumn, order) {
+            const arrows = document.querySelectorAll(".arrow");
+            arrows.forEach(arrow => arrow.textContent = ""); 
+
+            const arrowElement = document.getElementById(`${activeColumn.replace(/\s/g, '')}Arrow`);
+            if (arrowElement) {
+                arrowElement.textContent = order === 1 ? "▲" : "▼";
+            }
+        }
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+
+            try {
+                const response = await fetch(scriptURL, {
+                    method: "POST",
+                    body: params,
+                });
+
+                const result = await response.json();
+                if (result.result === "success") {
+                    const newEntry = Object.fromEntries(formData);
+                    newEntry["Date"] = new Date().toLocaleString(); 
+                    tableData.push(newEntry); 
+                    renderTable(tableData); 
+                    form.reset();
+                }
+            } catch (error) {
+                console.error("Error submitting data:", error);
+            }
         });
-        tableBody.appendChild(tr);
-      });
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  }
 
-  // Fetch data when the page loads
-  fetchData();
-</script>
+        fetchData();
+    </script>
+
+</body>
+</html>
