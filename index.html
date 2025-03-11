@@ -66,97 +66,97 @@
   
   
     <script>
-        const form = document.getElementById("radioForm");
-        const scriptURL = "https://script.google.com/macros/s/AKfycbwhUjCxkogNpUhKW1U_q0d8Z2-WB-WR7BNdsukvRqN25Ueu7qVMo6rcmWduyX4nQB3S8g/exec";
-        let tableData = [];
-        let sortOrder = {}; 
+    const form = document.getElementById("radioForm");
+    const scriptURL = "https://script.google.com/macros/s/AKfycbwhUjCxkogNpUhKW1U_q0d8Z2-WB-WR7BNdsukvRqN25Ueu7qVMo6rcmWduyX4nQB3S8g/exec";
+    let tableData = []; 
+    let sortOrder = {}; 
 
-        async function fetchData() {
-            try {
-                const response = await fetch(scriptURL);
-                tableData = await response.json();
-                if (tableData.length === 0) return;
-                renderTable(tableData);
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            }
+    async function fetchData() {
+        try {
+            const response = await fetch(scriptURL);
+            const data = await response.json();
+
+            if (data.length === 0) return; 
+
+            tableData = data;  // Store data globally
+            renderTable(tableData);  // Render immediately
+        } catch (error) {
+            console.error("Error fetching data:", error);
         }
+    }
 
-        function renderTable(data) {
-            const tableBody = document.getElementById("tableBody");
-            tableBody.innerHTML = "";
+    function renderTable(data) {
+        const tableBody = document.getElementById("tableBody");
+        tableBody.innerHTML = ""; 
 
-            data.forEach(row => {
-                const tr = document.createElement("tr");
-                Object.values(row).forEach(value => {
-                    const td = document.createElement("td");
-                    td.textContent = value;
-                    tr.appendChild(td);
-                });
-                tableBody.appendChild(tr);
+        data.forEach(row => {
+            const tr = document.createElement("tr");
+            Object.values(row).forEach(value => {
+                const td = document.createElement("td");
+                td.textContent = value;
+                tr.appendChild(td);
             });
-        }
+            tableBody.appendChild(tr);
+        });
+    }
 
-        function sortTable(column) {
-            const isNumeric = !isNaN(tableData[0][column]);
-            tableData.sort((a, b) => {
-                let valA = a[column], valB = b[column];
+    function sortTable(column) {
+        const isNumeric = !isNaN(tableData[0][column]); 
+        tableData.sort((a, b) => {
+            let valA = a[column], valB = b[column];
 
-                if (isNumeric) {
-                    valA = parseFloat(valA) || 0;
-                    valB = parseFloat(valB) || 0;
-                } else {
-                    valA = valA.toString().toLowerCase();
-                    valB = valB.toString().toLowerCase();
-                }
-
-                return (sortOrder[column] || 1) * (valA > valB ? 1 : -1);
-            });
-
-            sortOrder[column] = (sortOrder[column] || 1) * -1;
-
-            updateSortArrows(column, sortOrder[column]);
-
-            renderTable(tableData);
-        }
-
-        function updateSortArrows(activeColumn, order) {
-            const arrows = document.querySelectorAll(".arrow");
-            arrows.forEach(arrow => arrow.textContent = ""); 
-
-            const arrowElement = document.getElementById(`${activeColumn.replace(/\s/g, '')}Arrow`);
-            if (arrowElement) {
-                arrowElement.textContent = order === 1 ? "▲" : "▼";
+            if (isNumeric) {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+            } else {
+                valA = valA.toString().toLowerCase();
+                valB = valB.toString().toLowerCase();
             }
-        }
 
-        form.addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const formData = new FormData(form);
-            const params = new URLSearchParams(formData);
-
-            try {
-                const response = await fetch(scriptURL, {
-                    method: "POST",
-                    body: params,
-                });
-
-                const result = await response.json();
-                if (result.result === "success") {
-                    const newEntry = Object.fromEntries(formData);
-                    newEntry["Date"] = new Date().toLocaleString(); 
-                    tableData.push(newEntry); 
-                    renderTable(tableData); 
-                    form.reset();
-                }
-            } catch (error) {
-                console.error("Error submitting data:", error);
-            }
+            return (sortOrder[column] || 1) * (valA > valB ? 1 : -1);
         });
 
-        fetchData();
-    </script>
+        sortOrder[column] = (sortOrder[column] || 1) * -1; 
+        updateSortArrows(column, sortOrder[column]);
+
+        renderTable(tableData);
+    }
+
+    function updateSortArrows(activeColumn, order) {
+        document.querySelectorAll(".arrow").forEach(arrow => arrow.textContent = "");
+        const arrowElement = document.getElementById(`${activeColumn.replace(/\s/g, '')}Arrow`);
+        if (arrowElement) {
+            arrowElement.textContent = order === 1 ? "▲" : "▼";
+        }
+    }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+
+        try {
+            const response = await fetch(scriptURL, {
+                method: "POST",
+                body: params,
+            });
+
+            const result = await response.json();
+            if (result.result === "success") {
+                const newEntry = Object.fromEntries(formData);
+                newEntry["Date"] = new Date().toLocaleString();
+                tableData.push(newEntry);
+                renderTable(tableData);
+                form.reset();
+            }
+        } catch (error) {
+            console.error("Error submitting data:", error);
+        }
+    });
+
+    window.onload = fetchData;  // Fetch data immediately when the page loads
+</script>
 
 </body>
 </html>
