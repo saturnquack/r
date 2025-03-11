@@ -1,123 +1,71 @@
-<!DOCTYPE html>
-<html>
-<head>
-    
-    <title>saturns radio thing text</title>
-</head>
-<body>
-    <h2>saturns radio thing text</h2>
-    <form id="dataForm">
-        <label for="textInput">Enter Text:</label>
-        <input type="text" id="textInput" required><br><br>
+<form 
+  method="POST" 
+  action="https://script.google.com/macros/s/AKfycbwhUjCxkogNpUhKW1U_q0d8Z2-WB-WR7BNdsukvRqN25Ueu7qVMo6rcmWduyX4nQB3S8g/exec">
+  
+  Frequency: <input name="Frequency" type="text"> <br><br>
+  Alpha Tag: <input name="Alpha Tag" type="text"> <br><br>
+  County: <input name="County" type="text"> <br><br>
+  State: <input name="State" type="text"> <br><br>
 
-        <label for="dropdown">Choose an option:</label>
-        <select id="dropdown">
-            <option value="Option1">Option 1</option>
-            <option value="Option2">Option 2</option>
-            <option value="Option3">Option 3</option>
-        </select><br><br>
+  <label for="dropdown">Mode: </label>
+  <select name="Mode" id="dropdown">
+      <option value="FM">FM</option>
+      <option value="AM">AM</option>
+      <option value="P25 I">P25 I</option>
+      <option value="P25 II">P25 II</option>
+      <option value="DMR">DMR</option>
+      <option value="SSB">SSB</option>
+  </select><br><br>
 
-        <button type="submit">Submit</button>
-    </form>
+  <button type="submit">Send</button>
+</form>
 
-    <h2>stored data</h2>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>text</th>
-                <th>option</th>
-            </tr>
-        </thead>
-        <tbody id="dataTable"></tbody>
-    </table>
+<!-- Table to display sheet data -->
+<h2>Submitted Data</h2>
+<table border="1" id="dataTable">
+  <thead>
+    <tr id="tableHeader"></tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
 
-    <script>
-        const githubUsername = "saturnquack";
-        const repoName = "r";
-        const filePath = "data.json";
-        const branch = "main"; 
-        const token = "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"; 
+<script>
+  async function fetchData() {
+    try {
+      const response = await fetch('https://script.google.com/macros/s/AKfycbwhUjCxkogNpUhKW1U_q0d8Z2-WB-WR7BNdsukvRqN25Ueu7qVMo6rcmWduyX4nQB3S8g/exec');
+      const data = await response.json();
 
-        const apiUrl = `https://api.github.com/repos/${githubUsername}/${repoName}/contents/${filePath}`;
+      if (data.length === 0) return;
 
-        async function fetchData() {
-            const response = await fetch(apiUrl, {
-                headers: {
-                    "Authorization": `token ${token}`,
-                    "Accept": "application/vnd.github.v3+json"
-                }
-            });
+      const tableHeader = document.getElementById("tableHeader");
+      const tableBody = document.getElementById("tableBody");
 
-            if (!response.ok) {
-                console.error("Error fetching data:", await response.text());
-                return [];
-            }
+      // Clear existing table content
+      tableHeader.innerHTML = "";
+      tableBody.innerHTML = "";
 
-            const data = await response.json();
-            return JSON.parse(atob(data.content)); 
-        }
+      // Create table headers
+      Object.keys(data[0]).forEach(header => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        tableHeader.appendChild(th);
+      });
 
-        async function updateData(newData) {
-            const currentData = await fetchData();
-            currentData.push(newData);
-
-            const updatedContent = btoa(JSON.stringify(currentData, null, 2));
-
-            const response = await fetch(apiUrl, {
-                method: "PUT",
-                headers: {
-                    "Authorization": `token ${token}`,
-                    "Accept": "application/vnd.github.v3+json"
-                },
-                body: JSON.stringify({
-                    message: "Update data.json",
-                    content: updatedContent,
-                    sha: await getFileSHA()
-                })
-            });
-
-            if (response.ok) {
-                alert("Data saved successfully!");
-                loadData();
-            } else {
-                console.error("Error updating data:", await response.text());
-            }
-        }
-
-        async function getFileSHA() {
-            const response = await fetch(apiUrl, {
-                headers: { "Authorization": `token ${token}` }
-            });
-
-            if (!response.ok) return null;
-            const data = await response.json();
-            return data.sha; 
-        }
-
-        async function loadData() {
-            const data = await fetchData();
-            let tableBody = document.getElementById("dataTable");
-            tableBody.innerHTML = "";
-
-            data.forEach(row => {
-                let newRow = tableBody.insertRow();
-                newRow.insertCell(0).textContent = row.text;
-                newRow.insertCell(1).textContent = row.option;
-            });
-        }
-
-        document.getElementById("dataForm").addEventListener("submit", async function(event) {
-            event.preventDefault();
-
-            const newData = {
-                text: document.getElementById("textInput").value,
-                option: document.getElementById("dropdown").value
-            };
-
-            await updateData(newData);
+      // Populate table rows
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        Object.values(row).forEach(value => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          tr.appendChild(td);
         });
+        tableBody.appendChild(tr);
+      });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }
 
-        window.onload = loadData;
-    </script>
-</body>
-</html>
+  // Fetch data when the page loads
+  fetchData();
+</script>
